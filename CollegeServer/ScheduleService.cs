@@ -8,9 +8,6 @@ public class ScheduleService
 {
     private string _weekStateText = "чётной"; // Можно получать из базы или конфигурации
 
-    /// <summary>
-    /// Парсит Excel файл расписания и возвращает данные в виде списка
-    /// </summary>
     public List<List<string>> ParseExcelFile(Stream fileStream, int sheetNumber = 0)
     {
         var data = new List<List<string>>();
@@ -22,7 +19,10 @@ public class ScheduleService
 
             var range = worksheet.RangeUsed();
             if (range == null)
+            {
+                Console.WriteLine("SHEET IS NULL");
                 return data;
+            }
 
             int firstRow = range.FirstRow().RowNumber();
             int lastRow = range.LastRow().RowNumber();
@@ -57,15 +57,6 @@ public class ScheduleService
         return data;
     }
 
-    /// <summary>
-    /// Получает значение ячейки с учетом объединенных областей
-    /// </summary>
-    // ClosedXML already flattens merged ranges for value retrieval; helper no longer needed
-    private string GetMergedCellValuePlaceholder() => string.Empty;
-
-    /// <summary>
-    /// Фильтрует расписание по группе и дню
-    /// </summary>
     public List<string> FilterSchedule(List<List<string>> data, string group, string day)
     {
         var filteredData = new List<string>();
@@ -74,11 +65,12 @@ public class ScheduleService
         {
             if (data.Count == 0)
                 return new List<string> { "Пустой файл расписания" };
+            
 
-            // Найти строку заголовка, где встречается точное название группы (без учета регистра)
-            int groupIndex = -1;
+                // Найти строку заголовка, где встречается точное название группы (без учета регистра)
+                int groupIndex = -1;
             int headerRowIndex = -1;
-            int scanHeaderRows = Math.Min(50, data.Count);
+            int scanHeaderRows = 11;
             for (int r = 0; r < scanHeaderRows; r++)
             {
                 var row = data[r];
@@ -88,6 +80,7 @@ public class ScheduleService
                     {
                         groupIndex = c;
                         headerRowIndex = r;
+                        Console.WriteLine(group + groupIndex);
                         break;
                     }
                 }
@@ -98,13 +91,14 @@ public class ScheduleService
 
             // Найти строку дня (ключевое слово дня встречается в любой ячейке строки)
             int dayIndex = -1;
-            int scanRows = Math.Min(200, data.Count);
+            int scanRows = 67;
             for (int r = 0; r < scanRows; r++)
             {
                 var row = data[r];
                 if (row.Any(c => string.Equals(c?.Trim(), day?.Trim(), StringComparison.OrdinalIgnoreCase)))
                 {
                     dayIndex = r;
+                    Console.WriteLine(dayIndex + day);
                     break;
                 }
             }
@@ -116,10 +110,15 @@ public class ScheduleService
             for (int r = dayIndex + 1; r < data.Count && pair <= 8; r++)
             {
                 var row = data[r];
-                if (IsDayHeaderRow(row)) break;
+                if (!IsDayHeaderRow(row))
+                {
+                    Console.WriteLine("PIZDEC");
+                    continue;
+                }
                 string val = groupIndex < row.Count ? (row[groupIndex] ?? string.Empty).Trim() : string.Empty;
                 filteredData.Add(string.IsNullOrEmpty(val) ? $"{pair}пара: отсутствует" : $"{pair}пара: {val}");
                 pair++;
+                Console.WriteLine(val+filteredData.ToString+pair);
             }
         }
         catch (Exception ex)
@@ -130,9 +129,7 @@ public class ScheduleService
         return filteredData;
     }
 
-    /// <summary>
-    /// Находит индекс строки с указанным днем
-    /// </summary>
+
     private int FindDayIndex(List<List<string>> data, string day)
     {
         for (int i = 0; i < Math.Min(61, data.Count); i++)
@@ -145,9 +142,6 @@ public class ScheduleService
         return -1;
     }
 
-    /// <summary>
-    /// Фильтрует конкретную пару
-    /// </summary>
     private void FilterClass(int classNumber, int firstOffset, int secondOffset, int dayIndex,
                            int groupIndex, List<List<string>> data, List<string> filteredData)
     {
@@ -191,9 +185,6 @@ public class ScheduleService
         }
     }
 
-    /// <summary>
-    /// Безопасно получает данные ячейки
-    /// </summary>
     private string GetCellData(List<List<string>> data, int row, int col)
     {
         if (row < data.Count && col < data[row].Count)
@@ -201,9 +192,7 @@ public class ScheduleService
         return "";
     }
 
-    /// <summary>
-    /// Фильтрует замены по группе и дню
-    /// </summary>
+
     public List<string> FilterReplacement(List<List<string>> data, string group, string day)
     {
         var filteredData = new List<string>();
@@ -255,9 +244,7 @@ public class ScheduleService
         return filteredData;
     }
 
-    /// <summary>
-    /// Находит индекс строки с днем в файле замен
-    /// </summary>
+
     private int FindReplacementDayIndex(List<List<string>> data, string day)
     {
         for (int i = 0; i < data.Count; i++)
@@ -270,9 +257,7 @@ public class ScheduleService
         return -1;
     }
 
-    /// <summary>
-    /// Проверяет, является ли строка пустой
-    /// </summary>
+
     private bool IsEmptyRow(List<List<string>> data, int rowIndex)
     {
         if (rowIndex >= data.Count) return true;
@@ -284,17 +269,21 @@ public class ScheduleService
                 string.IsNullOrEmpty(row[2]));
     }
 
-    /// <summary>
-    /// Проверяет, является ли строка заголовком дня недели
-    /// </summary>
+
     private static bool IsDayHeaderRow(List<string> row)
     {
-        if (row == null) return false;
+        if (row == null) 
+           
+            return false; 
+
+
         var days = new[] { "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье" };
         for (int i = 0; i < row.Count; i++)
         {
             var cell = row[i]?.Trim();
+
             if (string.IsNullOrEmpty(cell)) continue;
+
             foreach (var d in days)
             {
                 if (string.Equals(cell, d, StringComparison.OrdinalIgnoreCase))

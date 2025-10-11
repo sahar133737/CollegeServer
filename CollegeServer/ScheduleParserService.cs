@@ -17,10 +17,6 @@ public class ScheduleParserService
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
     }
 
-    /// <summary>
-    /// Получает файл расписания для очной формы обучения
-    /// </summary>
-    /// <returns>Stream с содержимым файла расписания</returns>
     public async Task<Stream> GetScheduleFileAsync()
     {
         try
@@ -56,10 +52,7 @@ public class ScheduleParserService
         }
     }
 
-    /// <summary>
-    /// Получает файл с заменами на текущую дату
-    /// </summary>
-    /// <returns>Stream с содержимым файла замен</returns>
+
     public async Task<Stream> GetReplacementFileAsync()
     {
         try
@@ -97,10 +90,7 @@ public class ScheduleParserService
         }
     }
 
-    /// <summary>
-    /// Получает информацию о текущей неделе (четная/нечетная)
-    /// </summary>
-    /// <returns>Информация о текущей неделе</returns>
+
     public async Task<string> GetCurrentWeekInfoAsync()
     {
         try
@@ -111,7 +101,7 @@ public class ScheduleParserService
 
             // Ищем информацию о текущей неделе
             var weekInfoNode = doc.DocumentNode
-                .SelectSingleNode("//p[contains(text(), 'нечётной') or contains(text(), 'чётной')]");
+                .SelectSingleNode("//strong[contains(text(), 'нечётной') or contains(text(), 'чётной')]");
 
             return weekInfoNode?.InnerText.Trim() ?? "Информация о неделе не найдена";
         }

@@ -124,4 +124,17 @@ public class ScheduleController : ControllerBase
             return BadRequest($"Ошибка: {ex.Message}");
         }
     }
+
+    [HttpGet("test")]
+    public async void Test() {
+        var _scheduleParserService = new ScheduleParserService(new HttpClient());
+        var _scheduleService = new ScheduleService();
+        var data = _scheduleService.ParseExcelFile(_scheduleParserService.GetScheduleFileAsync().Result, 0);
+        Console.WriteLine("AAAAAAAAAALLLLLLLLLLLLLLLEEEEEEEEEEEEEE");
+
+        foreach (string str in data[10])
+            {
+                Console.WriteLine(str);
+            }
+    }
 }
