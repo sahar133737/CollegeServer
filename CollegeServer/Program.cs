@@ -1,19 +1,24 @@
 using Microsoft.EntityFrameworkCore;
+using CollegeServer;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Добавление сервисов
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Настройка Entity Framework
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Entity Framework
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddHttpClient<ScheduleParserService>();
+builder.Services.AddScoped<ScheduleParserService>();
+builder.Services.AddScoped<ScheduleService>();
+
 var app = builder.Build();
 
-// Конфигурация HTTP pipeline
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ HTTP pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
