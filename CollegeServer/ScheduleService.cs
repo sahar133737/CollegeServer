@@ -6,7 +6,8 @@ using ClosedXML.Excel;
 
 public class ScheduleService
 {
-    private string _weekStateText = "чётной"; // Можно получать из базы или конфигурации
+    /*private string _weekStateText = "чётной"; */ // Можно получать из базы или конфигурации
+    private string _weekStateText = new ScheduleParserService(new HttpClient()).GetCurrentWeekInfoAsync().Result;
 
     public List<List<string>> ParseExcelFile(Stream fileStream, int sheetNumber = 0)
     {
@@ -100,16 +101,29 @@ public class ScheduleService
                 { 1, (1, 2) },   // 1-я пара: строки dayIndex+1 и dayIndex+2
                 { 2, (3, 4) },   // 2-я пара: строки dayIndex+3 и dayIndex+4
                 { 3, (5, 6) },   // 3-я пара: строки dayIndex+5 и dayIndex+6
-                { 4, (7, 8) }    // 4-я пара: строки dayIndex+7 и dayIndex+8
+                { 4, (7, 8) },   // 4-я пара: строки dayIndex+7 и dayIndex+8
+                { 5, (9, 10) }   // 5-я пара: строки dayIndex+9 и dayIndex+10 (если есть)
             };
 
-            // Фильтруем каждую пару с использованием правильной логики (максимум 4 пары)
-            for (int pairNumber = 1; pairNumber <= 4; pairNumber++)
+            // Сначала проверяем, есть ли в 4-й паре информация о 5-й паре
+            bool hasFifthPairInFourth = false;
+            var fourthPairFirstData = GetCellData(data, dayIndex + 7, groupIndex);
+            var fourthPairSecondData = GetCellData(data, dayIndex + 8, groupIndex);
+            
+            if (fourthPairFirstData.Contains("5п") || fourthPairSecondData.Contains("5п") ||
+                fourthPairFirstData.Contains("5 пара") || fourthPairSecondData.Contains("5 пара"))
+            {
+                hasFifthPairInFourth = true;
+            }
+
+            // Фильтруем каждую пару с использованием правильной логики
+            int maxPairs = hasFifthPairInFourth ? 5 : 4;
+            for (int pairNumber = 1; pairNumber <= maxPairs; pairNumber++)
             {
                 if (pairOffsets.ContainsKey(pairNumber))
                 {
                     var offsets = pairOffsets[pairNumber];
-                    FilterClass(pairNumber, offsets.first, offsets.second, dayIndex, groupIndex, data, filteredData);
+                    FilterClass(pairNumber, offsets.first-1, offsets.second-1, dayIndex, groupIndex, data, filteredData);
                 }
             }
         }
@@ -135,75 +149,155 @@ public class ScheduleService
     }
 
     private void FilterClass(int classNumber, int firstOffset, int secondOffset, int dayIndex,
-                           int groupIndex, List<List<string>> data, List<string> filteredData)
+                        int groupIndex, List<List<string>> data, List<string> filteredData)
     {
         var firstParaData = GetCellData(data, dayIndex + firstOffset, groupIndex);
         var secondParaData = GetCellData(data, dayIndex + secondOffset, groupIndex);
 
-        // Обработка 4-й пары с учетом подгрупп и возможности размещения 4-й и 5-й пар
+        Console.WriteLine($"Пара {classNumber}: first='{firstParaData}', second='{secondParaData}', неделя='{_weekStateText}'");
+
+        // Обработка 4-й и 5-й пар с учетом подгрупп
         if (classNumber == 4)
         {
             // Проверяем, содержит ли ячейка информацию о 4-й и 5-й парах
-            bool hasFourthPair = firstParaData.Contains("4п") || secondParaData.Contains("4п");
-            bool hasFifthPair = firstParaData.Contains("5п") || secondParaData.Contains("5п");
-            
+            bool hasFourthPair = (firstParaData.Contains("4п") || secondParaData.Contains("4п") ||
+                                firstParaData.Contains("4 пара") || secondParaData.Contains("4 пара"));
+            bool hasFifthPair = (firstParaData.Contains("5п") || secondParaData.Contains("5п") ||
+                               firstParaData.Contains("5 пара") || secondParaData.Contains("5 пара"));
+
             if (hasFourthPair || hasFifthPair)
             {
-                var result = "4пара: ";
-                var parts = new List<string>();
-                
-                // Обрабатываем первую строку
-                if (!string.IsNullOrEmpty(firstParaData))
+                // Разделяем данные на 4-ю и 5-ю пары
+                var fourthPairData = new List<string>();
+                var fifthPairData = new List<string>();
+
+                // Функция для разделения строки на части по маркерам пар
+                var splitPairData = new Action<string>((data) =>
                 {
-                    parts.Add(firstParaData);
-                }
-                
-                // Обрабатываем вторую строку
-                if (!string.IsNullOrEmpty(secondParaData))
+                    if (string.IsNullOrEmpty(data)) return;
+
+                    // Если строка содержит информацию о 5-й паре
+                    if (data.Contains("5 пара") || data.Contains("5п"))
+                    {
+                        // Разделяем по "5 пара" или "5п"
+                        string[] separators = { "5 пара", "5п" };
+                        var parts = data.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+
+                        if (parts.Length >= 2)
+                        {
+                            // Первая часть - 4-я пара
+                            var fourthPart = parts[0].Trim();
+                            if (!string.IsNullOrEmpty(fourthPart))
+                            {
+                                fourthPairData.Add(fourthPart);
+                            }
+
+                            // Вторая часть - 5-я пара
+                            var fifthPart = parts[1].Trim();
+                            if (!string.IsNullOrEmpty(fifthPart))
+                            {
+                                fifthPairData.Add(fifthPart);
+                            }
+                        }
+                        else if (parts.Length == 1)
+                        {
+                            // Если только одна часть, но есть маркер 5-й пары
+                            fifthPairData.Add(data);
+                        }
+                    }
+                    else if (data.Contains("4п") || data.Contains("4 пара"))
+                    {
+                        fourthPairData.Add(data);
+                    }
+                    else
+                    {
+                        // Если нет маркеров, считаем это данными для 4-й пары
+                        fourthPairData.Add(data);
+                    }
+                });
+
+                // Анализируем первую строку
+                splitPairData(firstParaData);
+
+                // Анализируем вторую строку
+                splitPairData(secondParaData);
+
+                // Добавляем 4-ю пару только если есть данные
+                if (fourthPairData.Count > 0)
                 {
-                    parts.Add(secondParaData);
+                    string fourthPairText = string.Join(" \n", fourthPairData).Trim();
+                    if (!string.IsNullOrEmpty(fourthPairText))
+                    {
+                        filteredData.Add($"4пара: {fourthPairText}");
+                    }
                 }
-                
-                // Объединяем все части
-                if (parts.Count > 0)
+
+                // Добавляем 5-ю пару только если есть данные
+                if (fifthPairData.Count > 0)
                 {
-                    result += string.Join(" \n", parts);
-                    filteredData.Add(result);
+                    string fifthPairText = string.Join(" \n", fifthPairData).Trim();
+                    if (!string.IsNullOrEmpty(fifthPairText))
+                    {
+                        filteredData.Add($"5пара: {fifthPairText}");
+                    }
                 }
-                else
-                {
-                    filteredData.Add("4пара: отсутствует");
-                }
+
                 return;
             }
         }
 
-        // Логика фильтрации в зависимости от недели
+        // Обработка 5-й пары (если она обрабатывается отдельно)
+        if (classNumber == 5)
+        {
+            // Проверяем, была ли 5-я пара уже обработана в 4-й паре
+            var fourthPairFirstData = GetCellData(data, dayIndex + 7, groupIndex);
+            var fourthPairSecondData = GetCellData(data, dayIndex + 8, groupIndex);
+
+            if (fourthPairFirstData.Contains("5п") || fourthPairSecondData.Contains("5п") ||
+                fourthPairFirstData.Contains("5 пара") || fourthPairSecondData.Contains("5 пара"))
+            {
+                // 5-я пара уже обработана в 4-й паре, пропускаем
+                return;
+            }
+        }
+
+        // НОВАЯ ЛОГИКА: Определяем тип данных в ячейках
+        bool isEvenWeek = _weekStateText?.ToLower().Contains("нечёт") == false;
+
+        // Случай 1: Обе ячейки пустые
         if (string.IsNullOrEmpty(firstParaData) && string.IsNullOrEmpty(secondParaData))
         {
-            filteredData.Add($"{classNumber}пара: отсутствует");
+            return; // Пара отсутствует
         }
-        else if (string.IsNullOrEmpty(firstParaData) && !string.IsNullOrEmpty(secondParaData) && _weekStateText != "чётной")
+        // Случай 2: Только одна ячейка содержит данные - пара не зависит от недели
+        else if (string.IsNullOrEmpty(firstParaData) && !string.IsNullOrEmpty(secondParaData))
         {
+            // Одна пара для обеих недель (во второй ячейке)
             filteredData.Add($"{classNumber}пара: {secondParaData}");
         }
-        else if (!string.IsNullOrEmpty(firstParaData) && string.IsNullOrEmpty(secondParaData) && _weekStateText == "чётной")
+        else if (!string.IsNullOrEmpty(firstParaData) && string.IsNullOrEmpty(secondParaData))
         {
+            // Одна пара для обеих недель (в первой ячейке)
             filteredData.Add($"{classNumber}пара: {firstParaData}");
         }
+        // Случай 3: Обе ячейки содержат одинаковые данные - пара не зависит от недели
+        else if (firstParaData.Trim() == secondParaData.Trim())
+        {
+            // Одинаковые данные - пара не зависит от недели
+            filteredData.Add($"{classNumber}пара: {firstParaData}");
+        }
+        // Случай 4: Разные данные в ячейках - зависит от недели
         else if (!string.IsNullOrEmpty(firstParaData) && !string.IsNullOrEmpty(secondParaData))
         {
-            if (secondParaData == firstParaData)
+            if (isEvenWeek)
             {
-                filteredData.Add($"{classNumber}пара: {firstParaData}");
-            }
-            else if (_weekStateText == "чётной")
-            {
-                filteredData.Add($"{classNumber}пара: {firstParaData}");
+                // ЧЕТНАЯ неделя - берем вторую строку (нижнюю ячейку)
+                filteredData.Add($"{classNumber}пара: {secondParaData}");
             }
             else
             {
-                filteredData.Add($"{classNumber}пара: {secondParaData}");
+                // НЕЧЕТНАЯ неделя - берем первую строку (верхнюю ячейку)
+                filteredData.Add($"{classNumber}пара: {firstParaData}");
             }
         }
     }
