@@ -66,9 +66,8 @@ public class ScheduleService
             if (data.Count == 0)
                 return new List<string> { "Пустой файл расписания" };
             
-
-                // Найти строку заголовка, где встречается точное название группы (без учета регистра)
-                int groupIndex = -1;
+            // Найти строку заголовка, где встречается точное название группы (без учета регистра)
+            int groupIndex = -1;
             int headerRowIndex = -1;
             int scanHeaderRows = 11;
             for (int r = 0; r < scanHeaderRows; r++)
@@ -89,36 +88,29 @@ public class ScheduleService
             if (groupIndex < 0)
                 return new List<string> { "Группа не найдена" };
 
-            // Найти строку дня (ключевое слово дня встречается в любой ячейке строки)
-            int dayIndex = -1;
-            int scanRows = 67;
-            for (int r = 0; r < scanRows; r++)
-            {
-                var row = data[r];
-                if (row.Any(c => string.Equals(c?.Trim(), day?.Trim(), StringComparison.OrdinalIgnoreCase)))
-                {
-                    dayIndex = r;
-                    Console.WriteLine(dayIndex + day);
-                    break;
-                }
-            }
+            // Используем правильный метод поиска дня
+            int dayIndex = FindDayIndex(data, day);
             if (dayIndex < 0)
                 return new List<string> { "День не найден" };
 
-            // Собрать пары под столбцом группы, пока не встретим следующий заголовок дня
-            int pair = 1;
-            for (int r = dayIndex + 1; r < data.Count && pair <= 8; r++)
+            // Используем правильную логику фильтрации пар с учетом недель
+            // Определяем смещения для пар (обычно каждая пара занимает 2 строки - четная и нечетная недели)
+            var pairOffsets = new Dictionary<int, (int first, int second)>
             {
-                var row = data[r];
-                if (!IsDayHeaderRow(row))
+                { 1, (1, 2) },   // 1-я пара: строки dayIndex+1 и dayIndex+2
+                { 2, (3, 4) },   // 2-я пара: строки dayIndex+3 и dayIndex+4
+                { 3, (5, 6) },   // 3-я пара: строки dayIndex+5 и dayIndex+6
+                { 4, (7, 8) }    // 4-я пара: строки dayIndex+7 и dayIndex+8
+            };
+
+            // Фильтруем каждую пару с использованием правильной логики (максимум 4 пары)
+            for (int pairNumber = 1; pairNumber <= 4; pairNumber++)
+            {
+                if (pairOffsets.ContainsKey(pairNumber))
                 {
-                    Console.WriteLine("PIZDEC");
-                    continue;
+                    var offsets = pairOffsets[pairNumber];
+                    FilterClass(pairNumber, offsets.first, offsets.second, dayIndex, groupIndex, data, filteredData);
                 }
-                string val = groupIndex < row.Count ? (row[groupIndex] ?? string.Empty).Trim() : string.Empty;
-                filteredData.Add(string.IsNullOrEmpty(val) ? $"{pair}пара: отсутствует" : $"{pair}пара: {val}");
-                pair++;
-                Console.WriteLine(val+filteredData.ToString+pair);
             }
         }
         catch (Exception ex)
@@ -148,11 +140,42 @@ public class ScheduleService
         var firstParaData = GetCellData(data, dayIndex + firstOffset, groupIndex);
         var secondParaData = GetCellData(data, dayIndex + secondOffset, groupIndex);
 
-        // Обработка 4-й пары с учетом подгрупп
-        if (classNumber == 4 && firstParaData.Contains("4п"))
+        // Обработка 4-й пары с учетом подгрупп и возможности размещения 4-й и 5-й пар
+        if (classNumber == 4)
         {
-            filteredData.Add($"{firstParaData} \n{secondParaData}");
-            return;
+            // Проверяем, содержит ли ячейка информацию о 4-й и 5-й парах
+            bool hasFourthPair = firstParaData.Contains("4п") || secondParaData.Contains("4п");
+            bool hasFifthPair = firstParaData.Contains("5п") || secondParaData.Contains("5п");
+            
+            if (hasFourthPair || hasFifthPair)
+            {
+                var result = "4пара: ";
+                var parts = new List<string>();
+                
+                // Обрабатываем первую строку
+                if (!string.IsNullOrEmpty(firstParaData))
+                {
+                    parts.Add(firstParaData);
+                }
+                
+                // Обрабатываем вторую строку
+                if (!string.IsNullOrEmpty(secondParaData))
+                {
+                    parts.Add(secondParaData);
+                }
+                
+                // Объединяем все части
+                if (parts.Count > 0)
+                {
+                    result += string.Join(" \n", parts);
+                    filteredData.Add(result);
+                }
+                else
+                {
+                    filteredData.Add("4пара: отсутствует");
+                }
+                return;
+            }
         }
 
         // Логика фильтрации в зависимости от недели
