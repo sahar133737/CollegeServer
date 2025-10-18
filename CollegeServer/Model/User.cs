@@ -48,4 +48,28 @@ namespace CollegeServer.Model
         public string PhotoFiletype { get; set; }
         public string Group { get; set; }
     }
+
+    public class UpdateUserDto
+    {
+        [Required]
+        public string FIO { get; set; }
+
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+
+        public string Password { get; set; }
+        public IFormFile Photo { get; set; }
+        public string Group { get; set; }
+    }
+
+    public class LoginDto
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+
+        [Required]
+        public string Password { get; set; }
+    }
 }

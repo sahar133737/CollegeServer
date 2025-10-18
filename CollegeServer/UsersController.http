@@ -1,0 +1,96 @@
+### Получить всех пользователей
+GET https://localhost:7000/api/users
+Accept: application/json
+
+### Получить пользователя по ID
+GET https://localhost:7000/api/users/1
+Accept: application/json
+
+### Создать нового пользователя (с фото)
+POST https://localhost:7000/api/users
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="FIO"
+
+Иванов Иван Иванович
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="Email"
+
+ivan@example.com
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="Password"
+
+password123
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="Group"
+
+Студент
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="Photo"; filename="photo.jpg"
+Content-Type: image/jpeg
+
+< ./photo.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Создать пользователя без фото
+POST https://localhost:7000/api/users
+Content-Type: application/json
+
+{
+  "FIO": "Петров Петр Петрович",
+  "Email": "petr@example.com",
+  "Password": "password456",
+  "Group": "Преподаватель"
+}
+
+### Аутентификация пользователя
+POST https://localhost:7000/api/users/login
+Content-Type: application/json
+
+{
+  "Email": "ivan@example.com",
+  "Password": "password123"
+}
+
+### Обновить пользователя
+PUT https://localhost:7000/api/users/1
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="FIO"
+
+Иванов Иван Иванович (обновлено)
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="Email"
+
+ivan.updated@example.com
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="Password"
+
+newpassword123
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="Group"
+
+Выпускник
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Получить фото пользователя
+GET https://localhost:7000/api/users/1/photo
+
+### Загрузить фото пользователя
+POST https://localhost:7000/api/users/1/photo
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="photo"; filename="new_photo.jpg"
+Content-Type: image/jpeg
+
+< ./new_photo.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Удалить фото пользователя
+DELETE https://localhost:7000/api/users/1/photo
+
+### Удалить пользователя
+DELETE https://localhost:7000/api/users/1
