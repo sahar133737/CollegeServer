@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 
 namespace CollegeServer.Model
@@ -12,7 +13,7 @@ namespace CollegeServer.Model
         public string FIO { get; set; }
 
         [Required]
-       
+
         public string Email { get; set; }
 
         [Required]
@@ -27,49 +28,63 @@ namespace CollegeServer.Model
     public class CreateUserDto
     {
         [Required]
+        [JsonPropertyName("full_name")]
         public string FIO { get; set; }
-
         [Required]
-        [EmailAddress]
+        [JsonPropertyName("email")]
         public string Email { get; set; }
 
         [Required]
+        [JsonPropertyName("password")]
         public string Password { get; set; }
 
+        [JsonPropertyName("photo")]
         public IFormFile Photo { get; set; }
-        public string Group { get; set; }
+
+        [JsonPropertyName("group")]
+        public string Group
+        {
+            get; set;
+        } 
     }
 
-    public class UserResponseDto
+        public class UserResponseDto
+        {
+            public int Id { get; set; }
+            public string FIO { get; set; }
+            public string Email { get; set; }
+            public string PhotoFiletype { get; set; }
+            public string Group { get; set; }
+        }
+
+        public class UpdateUserDto
+        {
+            [Required]
+            public string FIO { get; set; }
+
+            [Required]
+            [EmailAddress]
+            public string Email { get; set; }
+
+            public string Password { get; set; }
+            public IFormFile Photo { get; set; }
+            public string Group { get; set; }
+        }
+
+        public class LoginDto
+        {
+            [Required]
+            [EmailAddress]
+            public string Email { get; set; }
+
+            [Required]
+            public string Password { get; set; }
+        }
+    public class CreateUserWithoutPhotoDto
     {
-        public int Id { get; set; }
         public string FIO { get; set; }
         public string Email { get; set; }
-        public string PhotoFiletype { get; set; }
-        public string Group { get; set; }
-    }
-
-    public class UpdateUserDto
-    {
-        [Required]
-        public string FIO { get; set; }
-
-        [Required]
-        [EmailAddress]
-        public string Email { get; set; }
-
         public string Password { get; set; }
-        public IFormFile Photo { get; set; }
         public string Group { get; set; }
-    }
-
-    public class LoginDto
-    {
-        [Required]
-        [EmailAddress]
-        public string Email { get; set; }
-
-        [Required]
-        public string Password { get; set; }
     }
 }

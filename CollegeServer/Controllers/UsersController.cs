@@ -17,23 +17,23 @@ public class UsersController : ControllerBase
         _environment = environment;
     }
 
-    // GET: api/users
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetUsers()
-    {
-        var users = await _context.User
-            .Select(u => new UserResponseDto
-            {
-                Id = u.Id,
-                FIO = u.FIO,
-                Email = u.Email,
-                PhotoFiletype = u.PhotoFiletype,
-                Group = u.Group
-            })
-            .ToListAsync();
+    //// GET: api/users
+    //[HttpGet]
+    //public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetUsers()
+    //{
+    //    var users = await _context.User
+    //        .Select(u => new UserResponseDto
+    //        {
+    //            Id = u.Id,
+    //            FIO = u.FIO,
+    //            Email = u.Email,
+    //            PhotoFiletype = u.PhotoFiletype,
+    //            Group = u.Group
+    //        })
+    //        .ToListAsync();
 
-        return Ok(users);
-    }
+    //    return Ok(users);
+    //}
 
     // GET: api/users/5
     [HttpGet("{id}")]
@@ -58,8 +58,9 @@ public class UsersController : ControllerBase
     }
 
     // POST: api/users
+    
     [HttpPost]
-    public async Task<ActionResult<UserResponseDto>> CreateUser([FromForm] CreateUserDto createUserDto)
+    public async Task<ActionResult<UserResponseDto>> CreateUserWithoutPhoto([FromBody] CreateUserWithoutPhotoDto createUserDto)
     {
         // Проверяем, существует ли пользователь с таким email
         var existingUser = await _context.User.FirstOrDefaultAsync(u => u.Email == createUserDto.Email);
@@ -73,17 +74,10 @@ public class UsersController : ControllerBase
             FIO = createUserDto.FIO,
             Email = createUserDto.Email,
             Password = HashPassword(createUserDto.Password),
-            Group = createUserDto.Group
+            Group = createUserDto.Group,
+            Photo = null, // Фото необязательно
+            PhotoFiletype = null
         };
-
-        // Обработка загрузки фото
-        if (createUserDto.Photo != null && createUserDto.Photo.Length > 0)
-        {
-            using var memoryStream = new MemoryStream();
-            await createUserDto.Photo.CopyToAsync(memoryStream);
-            user.Photo = memoryStream.ToArray();
-            user.PhotoFiletype = Path.GetExtension(createUserDto.Photo.FileName).TrimStart('.');
-        }
 
         _context.User.Add(user);
         await _context.SaveChangesAsync();
@@ -97,7 +91,7 @@ public class UsersController : ControllerBase
             Group = user.Group
         };
 
-        return CreatedAtAction(nameof(GetUser), new { id = user.Id }, responseDto);
+        return Ok(responseDto);
     }
 
     // POST: api/users/login
