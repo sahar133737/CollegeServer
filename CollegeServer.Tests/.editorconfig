@@ -1,0 +1,82 @@
+# EditorConfig для проекта тестов CollegeServer
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.cs]
+indent_style = space
+indent_size = 4
+
+# Настройки для тестов
+[*.{cs,csx}]
+# Использовать var для локальных переменных
+csharp_style_var_for_built_in_types = false
+csharp_style_var_when_type_is_apparent = true
+csharp_style_var_elsewhere = false
+
+# Использовать explicit types для полей
+csharp_style_var_for_built_in_types = false
+
+# Настройки для async/await
+csharp_style_async_methods = true
+
+# Настройки для null checks
+csharp_style_null_propagation = true
+csharp_style_conditional_delegate_call = true
+
+# Настройки для using statements
+csharp_using_directive_placement = outside_namespace
+
+# Настройки для тестов
+[*.cs]
+# Именование тестовых методов
+dotnet_naming_rule.test_methods_should_be_pascal_case.severity = warning
+dotnet_naming_rule.test_methods_should_be_pascal_case.symbols = test_methods
+dotnet_naming_rule.test_methods_should_be_pascal_case.style = pascal_case
+
+dotnet_naming_symbols.test_methods.applicable_kinds = method
+dotnet_naming_symbols.test_methods.applicable_accessibilities = public
+dotnet_naming_symbols.test_methods.required_modifiers = 
+
+dotnet_naming_style.pascal_case.required_prefix = 
+dotnet_naming_style.pascal_case.required_suffix = 
+dotnet_naming_style.pascal_case.word_separator = 
+dotnet_naming_style.pascal_case.capitalization = pascal_case
+
+# Настройки для Assert statements
+dotnet_diagnostic.xUnit2000.severity = error
+dotnet_diagnostic.xUnit2001.severity = error
+dotnet_diagnostic.xUnit2002.severity = error
+dotnet_diagnostic.xUnit2003.severity = error
+dotnet_diagnostic.xUnit2004.severity = error
+dotnet_diagnostic.xUnit2005.severity = error
+dotnet_diagnostic.xUnit2006.severity = error
+dotnet_diagnostic.xUnit2007.severity = error
+dotnet_diagnostic.xUnit2008.severity = error
+dotnet_diagnostic.xUnit2009.severity = error
+dotnet_diagnostic.xUnit2010.severity = error
+dotnet_diagnostic.xUnit2011.severity = error
+dotnet_diagnostic.xUnit2012.severity = error
+dotnet_diagnostic.xUnit2013.severity = error
+dotnet_diagnostic.xUnit2014.severity = error
+dotnet_diagnostic.xUnit2015.severity = error
+dotnet_diagnostic.xUnit2016.severity = error
+dotnet_diagnostic.xUnit2017.severity = error
+dotnet_diagnostic.xUnit2018.severity = error
+dotnet_diagnostic.xUnit2019.severity = error
+dotnet_diagnostic.xUnit2020.severity = error
+dotnet_diagnostic.xUnit2021.severity = error
+dotnet_diagnostic.xUnit2022.severity = error
+dotnet_diagnostic.xUnit2023.severity = error
+dotnet_diagnostic.xUnit2024.severity = error
+dotnet_diagnostic.xUnit2025.severity = error
+dotnet_diagnostic.xUnit2026.severity = error
+dotnet_diagnostic.xUnit2027.severity = error
+dotnet_diagnostic.xUnit2028.severity = error
+dotnet_diagnostic.xUnit2029.severity = error
+dotnet_diagnostic.xUnit2030.severity = error
