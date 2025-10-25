@@ -4,9 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
 
-[ApiController]
-[Route("api/[controller]")]
-public class UsersController : ControllerBase
+namespace CollegeServer.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class UsersController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly IWebHostEnvironment _environment;
@@ -17,23 +19,23 @@ public class UsersController : ControllerBase
         _environment = environment;
     }
 
-    //// GET: api/users
-    //[HttpGet]
-    //public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetUsers()
-    //{
-    //    var users = await _context.User
-    //        .Select(u => new UserResponseDto
-    //        {
-    //            Id = u.Id,
-    //            FIO = u.FIO,
-    //            Email = u.Email,
-    //            PhotoFiletype = u.PhotoFiletype,
-    //            Group = u.Group
-    //        })
-    //        .ToListAsync();
+    // GET: api/users
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetUsers()
+    {
+        var users = await _context.User
+            .Select(u => new UserResponseDto
+            {
+                Id = u.Id,
+                FIO = u.FIO,
+                Email = u.Email,
+                PhotoFiletype = u.PhotoFiletype,
+                Group = u.Group
+            })
+            .ToListAsync();
 
-    //    return Ok(users);
-    //}
+        return Ok(users);
+    }
 
     // GET: api/users/5
     [HttpGet("{id}")]
@@ -251,5 +253,6 @@ public class UsersController : ControllerBase
         var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
         return Convert.ToBase64String(hashedBytes);
     }
+}
 }
    
