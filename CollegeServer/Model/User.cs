@@ -19,9 +19,9 @@ namespace CollegeServer.Model
         [Required]
         public string Password { get; set; }
 
-        public byte[] Photo { get; set; }
-        public string PhotoFiletype { get; set; }
-        public string Group { get; set; }
+        public byte[]? Photo { get; set; }  // Измените на nullable
+        public string? PhotoFiletype { get; set; }  // Измените на nullable
+        public string? Group { get; set; }  // Измените на nullable
     }
 
 
@@ -39,13 +39,10 @@ namespace CollegeServer.Model
         public string Password { get; set; }
 
         [JsonPropertyName("photo")]
-        public IFormFile Photo { get; set; }
+        public IFormFile? Photo { get; set; }  // Сделайте nullable
 
         [JsonPropertyName("group")]
-        public string Group
-        {
-            get; set;
-        } 
+        public string? Group { get; set; }  // Сделайте nullable
     }
 
         public class UserResponseDto
@@ -53,9 +50,9 @@ namespace CollegeServer.Model
             public int Id { get; set; }
             public string FIO { get; set; }
             public string Email { get; set; }
-            public string PhotoFiletype { get; set; }
-            public string Group { get; set; }
-        }
+        public string? PhotoFiletype { get; set; }  // Сделайте nullable
+        public string? Group { get; set; }  // Сделайте nullable
+    }
 
         public class UpdateUserDto
         {
@@ -66,10 +63,10 @@ namespace CollegeServer.Model
             [EmailAddress]
             public string Email { get; set; }
 
-            public string Password { get; set; }
-            public IFormFile Photo { get; set; }
-            public string Group { get; set; }
-        }
+        public string? Password { get; set; }  // Сделайте nullable
+        public IFormFile? Photo { get; set; }  // Сделайте nullable
+        public string? Group { get; set; }  // Сделайте nullable
+    }
 
         public class LoginDto
         {
@@ -85,6 +82,6 @@ namespace CollegeServer.Model
         public string FIO { get; set; }
         public string Email { get; set; }
         public string Password { get; set; }
-        public string Group { get; set; }
+        public string? Group { get; set; }  // Сделайте nullable
     }
 }

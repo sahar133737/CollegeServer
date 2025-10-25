@@ -46,8 +46,8 @@ public class UsersController : ControllerBase
                 Id = u.Id,
                 FIO = u.FIO,
                 Email = u.Email,
-                PhotoFiletype = u.PhotoFiletype,
-                Group = u.Group
+                PhotoFiletype = u.PhotoFiletype,  // Может быть null
+                Group = u.Group  // Может быть null
             })
             .FirstOrDefaultAsync();
 
@@ -58,7 +58,7 @@ public class UsersController : ControllerBase
     }
 
     // POST: api/users
-    
+
     [HttpPost]
     public async Task<ActionResult<UserResponseDto>> CreateUserWithoutPhoto([FromBody] CreateUserWithoutPhotoDto createUserDto)
     {
@@ -74,9 +74,9 @@ public class UsersController : ControllerBase
             FIO = createUserDto.FIO,
             Email = createUserDto.Email,
             Password = HashPassword(createUserDto.Password),
-            Group = createUserDto.Group,
-            Photo = null, // Фото необязательно
-            PhotoFiletype = null
+            Group = createUserDto.Group,  // Может быть null
+            Photo = null,
+            PhotoFiletype = null  // Явно устанавливаем null
         };
 
         _context.User.Add(user);
@@ -87,8 +87,8 @@ public class UsersController : ControllerBase
             Id = user.Id,
             FIO = user.FIO,
             Email = user.Email,
-            PhotoFiletype = user.PhotoFiletype,
-            Group = user.Group
+            PhotoFiletype = user.PhotoFiletype,  // Будет null
+            Group = user.Group  // Может быть null
         };
 
         return Ok(responseDto);
@@ -98,23 +98,34 @@ public class UsersController : ControllerBase
     [HttpPost("login")]
     public async Task<ActionResult<UserResponseDto>> Login([FromBody] LoginDto loginDto)
     {
-        var hashedPassword = HashPassword(loginDto.Password);
-        var user = await _context.User
-            .FirstOrDefaultAsync(u => u.Email == loginDto.Email && u.Password == hashedPassword);
-
-        if (user == null)
-            return Unauthorized("Неверный email или пароль");
-
-        var responseDto = new UserResponseDto
+        try
         {
-            Id = user.Id,
-            FIO = user.FIO,
-            Email = user.Email,
-            PhotoFiletype = user.PhotoFiletype,
-            Group = user.Group
-        };
+            var hashedPassword = HashPassword(loginDto.Password);
 
-        return Ok(responseDto);
+            // Безопасный запрос с проверкой на null
+            var user = await _context.User
+                .Where(u => u.Email == loginDto.Email && u.Password == hashedPassword)
+                .Select(u => new UserResponseDto
+                {
+                    Id = u.Id,
+                    FIO = u.FIO,
+                    Email = u.Email,
+                    PhotoFiletype = u.PhotoFiletype,  // Может быть null - это нормально
+                    Group = u.Group  // Может быть null - это нормально
+                })
+                .FirstOrDefaultAsync();
+
+            if (user == null)
+                return Unauthorized("Неверный email или пароль");
+
+            return Ok(user);
+        }
+        catch (Exception ex)
+        {
+            // Логируем ошибку для отладки
+            Console.WriteLine($"Login error: {ex.Message}");
+            return StatusCode(500, "Произошла ошибка при входе в систему");
+        }
     }
 
     // PUT: api/users/5
@@ -186,7 +197,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetUserPhoto(int id)
     {
         var user = await _context.User.FindAsync(id);
-        if (user == null || user.Photo == null)
+        if (user == null || user.Photo == null || user.PhotoFiletype == null)
             return NotFound();
 
         return File(user.Photo, $"image/{user.PhotoFiletype}");
